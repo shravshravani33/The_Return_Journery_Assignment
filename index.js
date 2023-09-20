@@ -7,10 +7,11 @@ const ipinfo = require("ipinfo");
 const twilio = require("twilio");
 
 const accountSid = "AC3fd976b505297a719d8fd1eb7422e1b9";
-const authToken = "9561d5880f459db672137be5f7100acf";
+const authToken = "0e1219d031d91e58716d33bbf5f6ed95";
 
 const app = express();
 app.use(express.json());
+
 const dbPath = path.join(__dirname, "userregistrationsystem.db");
 
 let db = null;
@@ -32,13 +33,19 @@ const initializeDBAndServer = async () => {
 const otpStore = {};
 initializeDBAndServer();
 
+// Validate IP address
+function isValidIP(ip) {
+  const ipPattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  return ipPattern.test(ip);
+}
+
 // USER REGISTRATION API
 app.post("/user/", async (request, response) => {
   const { ip_address, mobileNumber } = request.body;
 
-  if (!ip_address) {
-    console.error("Empty IP address.");
-    return response.status(400).json({ error: "Empty IP address" });
+  if (!ip_address || !isValidIP(ip_address)) {
+    console.error("Invalid or empty IP address.");
+    return response.status(400).json({ error: "Invalid or empty IP address" });
   }
 
   const client = new twilio(accountSid, authToken);
@@ -50,7 +57,7 @@ app.post("/user/", async (request, response) => {
       const userPhoneNumber = mobileNumber;
       otpStore[userPhoneNumber] = otp;
 
-      const hashedOTP = await bcrypt.hash(otp.toString(), 10);
+      const hashedOTP = await bcrypt.hash(otp.toString(), 10); // Hash the OTP
 
       try {
         await db.run(
@@ -59,8 +66,7 @@ app.post("/user/", async (request, response) => {
         );
       } catch (err) {
         console.error(`Error inserting user into the database: ${err}`);
-        response.status(500).json({ error: "Internal server error" });
-        return;
+        return response.status(500).json({ error: "Internal server error" });
       }
 
       client.messages
@@ -71,17 +77,21 @@ app.post("/user/", async (request, response) => {
         })
         .then((message) => {
           console.log(`OTP sent with SID: ${message.sid}`);
+          response
+            .status(200)
+            .json({ message: `OTP sent successfully '${otp}'` });
         })
         .catch((error) => {
           console.error(`Error sending OTP: ${error}`);
+          response.status(500).json({ error: "Error sending OTP" });
         });
-      response.status(200).json({ otp: otp });
     } else {
       console.error(`${ip_address} is not a valid IP address.`);
       response.status(400).json({ error: "Invalid IP address" });
     }
   } catch (err) {
-    response.status(500).json({ error: `Internal server error ${err}` });
+    console.error(`Error processing request: ${err}`);
+    response.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -100,7 +110,7 @@ app.post("/user/validateOTP/", async (request, response) => {
       mobileNumber = ? 
     ORDER BY 
       id 
-    DESC LIMIT 1;`;
+    DESC LIMIT 1;`; //To get the latest generated OTP from the Database
     const row = await db.get(query, [userPhoneNumber]);
 
     if (!row) {
@@ -143,3 +153,5 @@ app.post("/user/validateOTP/", async (request, response) => {
     return response.status(500).json({ error: "Internal server error" });
   }
 });
+
+//Valid IP address 192.168.1.1

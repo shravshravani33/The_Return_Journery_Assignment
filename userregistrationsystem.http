@@ -4,7 +4,7 @@ Content-Type: application/json
 {
     "name":"Rahul",
     "mobileNumber":"+919390058542",
-    "ip_address":"fe80::1"
+    "ip_address":"192.168.1.1" 
 }
 
 ###
@@ -14,6 +14,6 @@ Content-Type:application/json
 
 {
     "userPhoneNumber":"+919390058542",
-    "enteredOTP":"9140",
+    "enteredOTP":"4609", 
     "ip_address":"fe80::1"
 }
