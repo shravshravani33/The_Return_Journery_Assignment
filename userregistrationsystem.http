@@ -1,0 +1,19 @@
+POST http://localhost:3000/user/
+Content-Type: application/json
+
+{
+    "name":"Rahul",
+    "mobileNumber":"+919390058542",
+    "ip_address":"fe80::1"
+}
+
+###
+
+POST http://localhost:3000/user/validateOTP/
+Content-Type:application/json
+
+{
+    "userPhoneNumber":"+919390058542",
+    "enteredOTP":"9140",
+    "ip_address":"fe80::1"
+}
